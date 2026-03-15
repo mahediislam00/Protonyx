@@ -59,7 +59,7 @@ const LOGO_URL_DEFAULT = ''; // e.g. '/logo.png'
 // ─────────────────────────────────────────
 const PRODUCTS_TEMPLATE = [
    {
-    id: 'prod_functional_organizer',
+    id: 'laptop_stand1',
     name: 'Modular Desk Organizer',
     desc: 'Stackable desk organizer printed in durable PETG. Fits standard pens, rulers, and accessories.',
     price: 420,
@@ -75,7 +75,7 @@ const PRODUCTS_TEMPLATE = [
     category: 'figurines',
     emoji: '🐉',
     images: [
-      // '/images/dragon-1.jpg',
+         // '/image/laptopstand1b.jpg',
       // '/images/dragon-2.jpg',
     ]
   },
