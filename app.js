@@ -58,6 +58,15 @@ const LOGO_URL_DEFAULT = ''; // e.g. '/logo.png'
 //  Use repo-relative paths like '/images/dragon.jpg' or full URLs.
 // ─────────────────────────────────────────
 const PRODUCTS_TEMPLATE = [
+   {
+    id: 'prod_functional_organizer',
+    name: 'Modular Desk Organizer',
+    desc: 'Stackable desk organizer printed in durable PETG. Fits standard pens, rulers, and accessories.',
+    price: 420,
+    category: 'functional',
+    emoji: '⚙️',
+    images: [/image/laptopstand1a, /image/laptopstand1b]
+  },
   {
     id: 'prod_figurines_dragon',
     name: 'Dragon Figurine',
