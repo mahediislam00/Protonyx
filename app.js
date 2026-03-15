@@ -31,19 +31,19 @@ function resolveImageUrl(path) {
 const HERO_CARDS_DEFAULT = [
   {
     id:       'heroCard1',
-    label:    'FEATURED PRINT',
-    name:     'Custom Figurine',
-    meta:     'PLA · 0.2mm · 48hr',
-    price:    '৳850',
-    imageUrl: '', // e.g. '/images/figurine.jpg'
+    label:    'TOP SELLER',
+    name:     'Vertical Monitor Stand',
+    meta:     'PLA · 0.4mm · 48hr',
+    price:    '৳550',
+    imageUrl: '/image/verticalstand1a.jpg' , '/image/verticalstand1b.jpg'
   },
   {
     id:       'heroCard2',
-    label:    'TOP SELLER',
-    name:     'Desk Organizer',
-    meta:     'PETG · 0.15mm · 48hr',
-    price:    '৳420',
-    imageUrl: '', // e.g. '/images/organizer.jpg'
+    label:    'Featured Print',
+    name:     'Laptop Stand',
+    meta:     'PETG · 0.4mm · 48hr',
+    price:    '৳450',
+    imageUrl: '/image/laptopstand1.jpg' , '/image/laptopstand2.jpg'
   },
 ];
 
@@ -58,6 +58,23 @@ const LOGO_URL_DEFAULT = ''; // e.g. '/logo.png'
 //  Use repo-relative paths like '/images/dragon.jpg' or full URLs.
 // ─────────────────────────────────────────
 const PRODUCTS_TEMPLATE = [
+  
+  {
+    id:       'p1',
+    label:    'TOP SELLER',
+    name:     'Vertical Monitor Stand',
+    meta:     'PLA · 0.4mm · 48hr',
+    price:    '৳550',
+    imageUrl: '/image/verticalstand1a.jpg' , '/image/verticalstand1b.jpg'
+  },
+  {
+    id:       'p2',
+    label:    'Featured Print',
+    name:     'Laptop Stand',
+    meta:     'PETG · 0.4mm · 48hr',
+    price:    '৳450',
+    imageUrl: '/image/laptopstand1.jpg' , '/image/laptopstand2.jpg'
+  },
   {
     id: 'prod_figurines_dragon',
     name: 'Dragon Figurine',
