@@ -59,15 +59,15 @@ const LOGO_URL_DEFAULT = ''; // e.g. '/logo.png'
 // ─────────────────────────────────────────
 const PRODUCTS_TEMPLATE = [
   {
-    id: 'prod_figurines_dragon',
-    name: 'Dragon Figurine',
-    desc: 'Highly detailed FDM dragon sculpture with fine surface finish. Perfect for collectors, desk display, or gifting.',
+    id: 'laptopstand',
+    name: 'Laptop Stand',
+    desc: 'modular Laptop Stand.',
     price: 850,
-    category: 'figurines',
+    category: 'functional',
     emoji: '🐉',
     images: [
-      // '/images/dragon-1.jpg',
-      // '/images/dragon-2.jpg',
+      '/image/laptopstand1a.jpg',
+      '/image/laptopstand1b.jpg',
     ]
   },
   {
