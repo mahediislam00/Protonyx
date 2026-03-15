@@ -128,7 +128,8 @@
     <input type="text" id="configTelegramChatId" placeholder="987654321 (get from @userinfobot)" class="dev-input">
     <input type="email" id="configEmail" placeholder="Admin Email (EmailJS)" class="dev-input">
     <input type="text" id="configEmailService" placeholder="EmailJS Service ID" class="dev-input">
-    <input type="text" id="configEmailTemplate" placeholder="EmailJS Template ID" class="dev-input">
+    <input type="text" id="configEmailTemplate" placeholder="EmailJS Owner Template ID" class="dev-input">
+    <input type="text" id="configCustomerEmailTemplate" placeholder="EmailJS Customer Confirmation Template ID" class="dev-input">
     <input type="text" id="configEmailPublic" placeholder="EmailJS Public Key" class="dev-input">
     <button class="dev-submit" onclick="saveConfig()">SAVE CONFIG</button>
 
@@ -249,8 +250,8 @@
       <div class="hv-scan-line"></div>
     </div>
 
-    <!-- Two floating product cards -->
-    <div class="hv-cards-row">
+    <!-- Two floating product cards — crossed/overlapping stack -->
+    <div class="hv-cards-stack">
 
       <div class="hv-card glass-card hv-card-float-a" id="heroCard1">
         <div class="hv-card-header">
@@ -477,9 +478,13 @@
           </select>
         </div>
         <div class="form-group"><label>Color Preference</label><input type="text" id="orderColor" class="form-input" placeholder="e.g. Red, Black, White"></div>
-        <div class="form-group"><label>Quantity</label><input type="number" id="orderQty" class="form-input" value="1" min="1"></div>
+        <div class="form-group">
+          <label>Quantity</label>
+          <input type="number" id="orderQty" class="form-input" value="1" min="1" oninput="updateOrderPricePreview()">
+        </div>
         <div class="form-group"><label>Upload Design File (optional)</label><input type="file" id="orderFile" class="form-input" accept=".stl,.obj,.3mf,image/*"></div>
       </div>
+      <div id="orderPricePreview" class="order-price-preview hidden"></div>
       <div class="form-group full-width">
         <label>Special Instructions</label>
         <textarea id="orderNotes" class="form-input form-textarea" placeholder="Any special requirements…"></textarea>

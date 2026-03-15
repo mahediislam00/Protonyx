@@ -663,7 +663,8 @@ function renderProductPage(p) {
   const imgs     = getProductImages(p);
   const isWished = wishlist.includes(p.id);
   const related  = products.filter(x => x.id !== p.id && x.category === p.category).slice(0, 4);
-  pgImages     = imgs; pgImgIdx = 0; pgCurrentQty = 1;
+  pgImages = imgs; pgImgIdx = 0; pgCurrentQty = 1;
+  window._pgProductPrice = p.price; // for running total preview
 
   document.getElementById('mainView').classList.add('hidden');
   const pv = document.getElementById('productPageView');
@@ -719,6 +720,7 @@ function renderProductPage(p) {
             <span id="pgQtyDisplay">1</span>
             <button onclick="pgQty(1)">+</button>
           </div>
+          <div class="pg-total-preview" id="pgTotalPreview">Price: <strong>৳${p.price.toLocaleString()}</strong></div>
         </div>
         <div class="pg-divider"></div>
         <div class="pg-cod-info">
@@ -767,16 +769,27 @@ function pgQty(delta) {
   pgCurrentQty = Math.max(1, pgCurrentQty + delta);
   const el = document.getElementById('pgQtyDisplay');
   if (el) el.textContent = pgCurrentQty;
+  // update running total preview
+  const preview = document.getElementById('pgTotalPreview');
+  if (preview && window._pgProductPrice) {
+    const total = pgCurrentQty * window._pgProductPrice;
+    preview.innerHTML = pgCurrentQty > 1
+      ? `Total: <strong>৳${total.toLocaleString()}</strong> <small>(${pgCurrentQty} × ৳${window._pgProductPrice.toLocaleString()})</small>`
+      : `Price: <strong>৳${total.toLocaleString()}</strong>`;
+  }
 }
 function pgOrderNow(id) {
   const material = document.getElementById('pgMaterial')?.value || 'PLA';
   const color    = document.getElementById('pgColor')?.value    || '';
   openOrderModal(id);
+  // openOrderModal resets qty to 1 and fires updateOrderPricePreview at t=20ms.
+  // We override qty at t=40ms then immediately refresh the preview with the real quantity.
   setTimeout(() => {
     if (document.getElementById('orderMaterial')) document.getElementById('orderMaterial').value = material;
     if (document.getElementById('orderColor'))    document.getElementById('orderColor').value    = color;
     if (document.getElementById('orderQty'))      document.getElementById('orderQty').value      = pgCurrentQty;
-  }, 30);
+    updateOrderPricePreview(); // re-run now that qty is correct
+  }, 40);
 }
 function pgSetImg(idx) {
   pgImgIdx = idx;
@@ -895,14 +908,56 @@ function openOrderModal(productId, isCustom = false) {
   currentOrderProduct = productId ? products.find(p => p.id === productId) : null;
   const label = document.getElementById('modalProductName');
   if (isCustom) label.textContent = '🛠 Custom Order — Upload your own design (STL / OBJ / 3MF)';
-  else if (currentOrderProduct) label.textContent = `📦 ${currentOrderProduct.name} — ৳${currentOrderProduct.price.toLocaleString()}`;
+  else if (currentOrderProduct) label.textContent = `📦 ${currentOrderProduct.name} — ৳${currentOrderProduct.price.toLocaleString()} each`;
   else label.textContent = `🛒 Cart Order — ${cart.length} item(s)`;
   const s = document.getElementById('orderSummary');
   s.classList.remove('show');
   const btn = document.getElementById('submitOrderBtn');
   btn.textContent = 'SUBMIT ORDER'; btn.style.background = ''; btn.disabled = false;
+  // reset qty to 1 and init price preview
+  const qtyEl = document.getElementById('orderQty');
+  if (qtyEl) qtyEl.value = 1;
   document.getElementById('orderModal').classList.remove('hidden');
   document.body.style.overflow = 'hidden';
+  setTimeout(updateOrderPricePreview, 20); // after modal renders
+}
+
+function updateOrderPricePreview() {
+  const preview = document.getElementById('orderPricePreview');
+  if (!preview) return;
+
+  const qty = parseInt(document.getElementById('orderQty')?.value) || 1;
+
+  if (currentOrderProduct) {
+    const unit  = currentOrderProduct.price;
+    const total = unit * qty;
+    const isMulti = qty > 1;
+    preview.innerHTML = `
+      <div class="opp-row">
+        <span class="opp-label">Unit price</span>
+        <span class="opp-unit">৳${unit.toLocaleString()}</span>
+      </div>
+      ${isMulti ? `
+      <div class="opp-row">
+        <span class="opp-label">Quantity</span>
+        <span class="opp-unit">× ${qty}</span>
+      </div>` : ''}
+      <div class="opp-divider"></div>
+      <div class="opp-row opp-total-row">
+        <span class="opp-label">Total (COD)</span>
+        <span class="opp-total">৳${total.toLocaleString()}</span>
+      </div>`;
+    preview.classList.remove('hidden');
+  } else if (cart.length > 0) {
+    const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
+    preview.innerHTML = `
+      ${cart.map(i => `<div class="opp-row"><span class="opp-label">${i.name} ×${i.qty}</span><span class="opp-unit">৳${(i.price*i.qty).toLocaleString()}</span></div>`).join('')}
+      <div class="opp-divider"></div>
+      <div class="opp-row opp-total-row"><span class="opp-label">Total (COD)</span><span class="opp-total">৳${total.toLocaleString()}</span></div>`;
+    preview.classList.remove('hidden');
+  } else {
+    preview.classList.add('hidden');
+  }
 }
 function closeOrderModal() {
   document.getElementById('orderModal').classList.add('hidden');
@@ -928,17 +983,21 @@ async function submitOrder() {
   btn.textContent = 'SENDING…'; btn.disabled = true;
 
   const productInfo = currentOrderProduct
-    ? `${currentOrderProduct.name} — ৳${currentOrderProduct.price.toLocaleString()}`
-    : cart.length > 0 ? cart.map(i => `${i.name} x${i.qty}`).join(', ') : 'Custom Order';
+    ? `${currentOrderProduct.name}`
+    : cart.length > 0 ? cart.map(i => `${i.name} ×${i.qty}`).join(', ') : 'Custom Order';
+  const unitPrice  = currentOrderProduct ? currentOrderProduct.price : 0;
   const totalPrice = currentOrderProduct
-    ? currentOrderProduct.price * parseInt(qty)
+    ? unitPrice * parseInt(qty)
     : cart.reduce((s, i) => s + i.price * i.qty, 0);
+  const priceDetail = currentOrderProduct
+    ? (parseInt(qty) > 1 ? `৳${unitPrice.toLocaleString()} × ${qty} = ৳${totalPrice.toLocaleString()}` : `৳${totalPrice.toLocaleString()}`)
+    : `৳${totalPrice.toLocaleString()}`;
 
   const orderData = {
     id: 'ORD-' + Date.now(),
     timestamp: new Date().toLocaleString('en-BD', { timeZone: 'Asia/Dhaka' }),
     customer: { name, phone, email, address },
-    order:    { product: productInfo, material, color, quantity: qty, notes },
+    order:    { product: productInfo, material, color, quantity: qty, notes, priceDetail },
     payment:  'Cash on Delivery',
     total:    `৳${totalPrice.toLocaleString()}`
   };
@@ -947,7 +1006,8 @@ async function submitOrder() {
     <strong>📋 Order Confirmed</strong><br>
     🆔 ${orderData.id}<br>👤 ${name} · 📱 ${phone}<br>
     📦 ${productInfo}<br>🧵 ${material} · ${color || 'Any'} · Qty: ${qty}<br>
-    📍 ${address}<br>💵 Cash on Delivery · Total: ${orderData.total}`;
+    💰 ${priceDetail}<br>
+    📍 ${address}<br>💵 Payment: Cash on Delivery`;
   document.getElementById('orderSummary').classList.add('show');
 
   await sendNotifications(orderData);
@@ -967,7 +1027,13 @@ async function submitOrder() {
 // =========================================
 async function sendNotifications(orderData) {
   const msg = formatOrderMessage(orderData);
-  if (config.whatsapp) window.open(`https://wa.me/${config.whatsapp.replace(/\D/g,'')}?text=${encodeURIComponent(msg)}`, '_blank');
+
+  // 1. WhatsApp (owner)
+  if (config.whatsapp) {
+    window.open(`https://wa.me/${config.whatsapp.replace(/\D/g,'')}?text=${encodeURIComponent(msg)}`, '_blank');
+  }
+
+  // 2. Telegram (owner)
   if (config.telegramToken && config.telegramChatId) {
     try {
       await fetch(`https://api.telegram.org/bot${config.telegramToken}/sendMessage`, {
@@ -976,25 +1042,59 @@ async function sendNotifications(orderData) {
       });
     } catch (e) { console.warn('Telegram:', e); }
   }
-  if (config.emailServiceId && config.emailTemplateId && config.emailPublicKey) {
+
+  // 3. EmailJS — owner notification + customer confirmation
+  if (config.emailServiceId && config.emailPublicKey) {
     try {
       await loadEmailJS();
       emailjs.init(config.emailPublicKey);
-      await emailjs.send(config.emailServiceId, config.emailTemplateId, {
-        to_email: config.email || orderData.customer.email,
-        order_id: orderData.id, customer_name: orderData.customer.name,
-        customer_phone: orderData.customer.phone, customer_email: orderData.customer.email,
-        customer_address: orderData.customer.address, product: orderData.order.product,
-        material: orderData.order.material, color: orderData.order.color,
-        quantity: orderData.order.quantity, notes: orderData.order.notes,
-        payment: orderData.payment, total: orderData.total,
-        timestamp: orderData.timestamp, order_message: msg
-      });
-    } catch (e) { console.warn('EmailJS:', e); }
+
+      const sharedParams = {
+        order_id:         orderData.id,
+        customer_name:    orderData.customer.name,
+        customer_phone:   orderData.customer.phone,
+        customer_email:   orderData.customer.email || 'N/A',
+        customer_address: orderData.customer.address,
+        product:          orderData.order.product,
+        material:         orderData.order.material,
+        color:            orderData.order.color || 'Any',
+        quantity:         orderData.order.quantity,
+        notes:            orderData.order.notes || 'None',
+        payment:          orderData.payment,
+        total:            orderData.total,
+        timestamp:        orderData.timestamp,
+        order_message:    msg,
+      };
+
+      // 3a. Owner email
+      if (config.emailTemplateId && config.email) {
+        try {
+          await emailjs.send(config.emailServiceId, config.emailTemplateId, {
+            ...sharedParams,
+            to_email: config.email,
+          });
+        } catch (e) { console.warn('Owner email failed:', e); }
+      }
+
+      // 3b. Customer confirmation email (if they provided email + a customer template is configured)
+      const customerTemplate = config.customerEmailTemplateId;
+      if (customerTemplate && orderData.customer.email) {
+        try {
+          await emailjs.send(config.emailServiceId, customerTemplate, {
+            ...sharedParams,
+            to_email:      orderData.customer.email,
+            reply_to:      config.email || '',
+            // Friendly confirmation message the customer sees
+            confirm_msg:   `Hi ${orderData.customer.name}, your order has been received! We'll process it shortly and deliver to ${orderData.customer.address}. Payment is cash on delivery — ৳${orderData.total}.`,
+          });
+        } catch (e) { console.warn('Customer email failed:', e); }
+      }
+
+    } catch (e) { console.warn('EmailJS init failed:', e); }
   }
 }
 function formatOrderMessage(o) {
-  return `🖨️ *NEW ORDER — Protonyx*\n\n🆔 Order ID: ${o.id}\n🕐 Time: ${o.timestamp}\n\n👤 *Customer:*\nName: ${o.customer.name}\nPhone: ${o.customer.phone}\nEmail: ${o.customer.email || 'N/A'}\nAddress: ${o.customer.address}\n\n📦 *Order:*\nProduct: ${o.order.product}\nMaterial: ${o.order.material} (FDM)\nColor: ${o.order.color || 'Any'}\nQuantity: ${o.order.quantity}\nNotes: ${o.order.notes || 'None'}\n\n💵 *Payment: ${o.payment}*\n💰 *Total: ${o.total}*`;
+  return `🖨️ *NEW ORDER — Protonyx*\n\n🆔 Order ID: ${o.id}\n🕐 Time: ${o.timestamp}\n\n👤 *Customer:*\nName: ${o.customer.name}\nPhone: ${o.customer.phone}\nEmail: ${o.customer.email || 'N/A'}\nAddress: ${o.customer.address}\n\n📦 *Order:*\nProduct: ${o.order.product}\nMaterial: ${o.order.material} (FDM)\nColor: ${o.order.color || 'Any'}\nQuantity: ${o.order.quantity}\nPrice: ${o.order.priceDetail || o.total}\nNotes: ${o.order.notes || 'None'}\n\n💵 *Payment: ${o.payment}*\n💰 *Total: ${o.total}*`;
 }
 function loadEmailJS() {
   return new Promise(resolve => {
@@ -1133,13 +1233,14 @@ function getCategoryEmoji(cat) {
 // =========================================
 function saveConfig() {
   config = {
-    whatsapp:        document.getElementById('configWhatsapp').value.trim(),
-    telegramToken:   document.getElementById('configTelegramToken').value.trim(),
-    telegramChatId:  document.getElementById('configTelegramChatId').value.trim(),
-    email:           document.getElementById('configEmail').value.trim(),
-    emailServiceId:  document.getElementById('configEmailService').value.trim(),
-    emailTemplateId: document.getElementById('configEmailTemplate').value.trim(),
-    emailPublicKey:  document.getElementById('configEmailPublic').value.trim(),
+    whatsapp:                document.getElementById('configWhatsapp').value.trim(),
+    telegramToken:           document.getElementById('configTelegramToken').value.trim(),
+    telegramChatId:          document.getElementById('configTelegramChatId').value.trim(),
+    email:                   document.getElementById('configEmail').value.trim(),
+    emailServiceId:          document.getElementById('configEmailService').value.trim(),
+    emailTemplateId:         document.getElementById('configEmailTemplate').value.trim(),
+    customerEmailTemplateId: document.getElementById('configCustomerEmailTemplate').value.trim(),
+    emailPublicKey:          document.getElementById('configEmailPublic').value.trim(),
   };
   localStorage.setItem('forge3d_config', JSON.stringify(config));
   if (config.whatsapp) document.getElementById('displayWhatsapp').textContent = config.whatsapp;
@@ -1152,6 +1253,7 @@ function loadConfigUI() {
   set('configWhatsapp', config.whatsapp); set('configTelegramToken', config.telegramToken);
   set('configTelegramChatId', config.telegramChatId); set('configEmail', config.email);
   set('configEmailService', config.emailServiceId); set('configEmailTemplate', config.emailTemplateId);
+  set('configCustomerEmailTemplate', config.customerEmailTemplateId);
   set('configEmailPublic', config.emailPublicKey);
   if (config.whatsapp) { const el = document.getElementById('displayWhatsapp'); if (el) el.textContent = config.whatsapp; }
   if (config.email)    { const el = document.getElementById('displayEmail');    if (el) el.textContent = config.email; }

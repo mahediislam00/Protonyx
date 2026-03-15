@@ -53,6 +53,8 @@ body {
   border-radius: inherit;
 }
 
+
+
 /* ===== NAV ===== */
 #navbar {
   position: fixed;
@@ -434,7 +436,7 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 580px;
+  min-height: 620px;
   gap: 0;
   animation: hvFadeIn 1s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both;
 }
@@ -481,37 +483,55 @@ body {
   100% { top: 100%; opacity: 0; }
 }
 
-/* Two floating cards below the 3D shape */
-.hv-cards-row {
-  display: flex;
-  gap: 16px;
-  width: 100%;
-  max-width: 480px;
-  margin-top: 20px;
+/* Crossed/overlapping card stack below the 3D shape */
+.hv-cards-stack {
+  position: relative;
+  width: 500px;
+  height: 310px;
+  margin-top: 28px;
+  flex-shrink: 0;
   z-index: 1;
 }
 .hv-card {
-  flex: 1;
-  min-width: 0;
+  position: absolute;
+  width: 290px;
   overflow: hidden;
-  border-color: rgba(255,255,255,0.1);
+  border-color: rgba(255,255,255,0.12);
   box-shadow:
-    0 0 0 1px rgba(255,255,255,0.04),
-    0 24px 56px rgba(0,0,0,0.55),
-    0 0 40px rgba(232,0,30,0.07);
-  border-radius: 16px;
+    0 0 0 1px rgba(255,255,255,0.05),
+    0 28px 60px rgba(0,0,0,0.6),
+    0 0 40px rgba(232,0,30,0.08);
+  border-radius: 18px;
 }
-.hv-card-float-a { animation: cardFloat 5s ease-in-out infinite; }
-.hv-card-float-b { animation: cardFloat 6.2s ease-in-out 0.7s infinite; }
-@keyframes cardFloat {
-  0%,100% { transform: translateY(0); }
-  50%     { transform: translateY(-10px); }
+/* Card 1 — leans left, sits behind card 2 */
+.hv-card-float-a {
+  left: 0;
+  top: 0;
+  z-index: 1;
+  transform-origin: bottom center;
+  animation: cardFloatA 5.2s ease-in-out infinite;
+}
+/* Card 2 — leans right, sits in front, offset down-right */
+.hv-card-float-b {
+  right: 0;
+  top: 36px;
+  z-index: 2;
+  transform-origin: bottom center;
+  animation: cardFloatB 6.4s ease-in-out 0.8s infinite;
+}
+@keyframes cardFloatA {
+  0%,100% { transform: rotate(-6deg) translateY(0); }
+  50%     { transform: rotate(-6deg) translateY(-12px); }
+}
+@keyframes cardFloatB {
+  0%,100% { transform: rotate(5deg) translateY(0); }
+  50%     { transform: rotate(5deg) translateY(-10px); }
 }
 .hv-card-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 14px 9px;
+  padding: 14px 16px 10px;
 }
 .hv-chip {
   font-family: var(--font-mono);
@@ -521,7 +541,7 @@ body {
   color: var(--red-bright);
   background: rgba(232,0,30,0.12);
   border: 1px solid rgba(232,0,30,0.25);
-  padding: 3px 7px;
+  padding: 3px 8px;
   border-radius: 4px;
 }
 .hv-chip-alt {
@@ -549,22 +569,22 @@ body {
 /* Card image area */
 .hv-card-img-wrap {
   width: 100%;
-  height: 115px;
+  height: 130px;
   background: rgba(0,0,0,0.35);
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
 }
-.hv-card-img-ph { font-size: 36px; }
+.hv-card-img-ph { font-size: 42px; }
 
 .hv-card-body {
-  padding: 11px 14px 14px;
+  padding: 13px 16px 16px;
   border-top: 1px solid var(--glass-border);
 }
 .hv-card-name {
   font-family: var(--font-display);
-  font-size: 19px;
+  font-size: 21px;
   font-weight: 700;
   letter-spacing: 0.5px;
   color: var(--text);
@@ -578,7 +598,7 @@ body {
   font-family: var(--font-mono);
   color: var(--text-muted);
   letter-spacing: 1px;
-  margin-bottom: 11px;
+  margin-bottom: 12px;
 }
 .hv-card-foot {
   display: flex;
@@ -587,20 +607,20 @@ body {
 }
 .hv-price {
   font-family: var(--font-display);
-  font-size: 26px;
+  font-size: 28px;
   font-weight: 900;
   color: var(--red-bright);
 }
 .hv-add-btn {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 6px 12px;
+  gap: 5px;
+  padding: 7px 14px;
   background: var(--red);
   color: white;
   border: none;
-  border-radius: 5px;
-  font-size: 9px;
+  border-radius: 6px;
+  font-size: 10px;
   font-weight: 700;
   letter-spacing: 1px;
   cursor: pointer;
@@ -1401,6 +1421,58 @@ select.form-input { cursor: pointer; }
 }
 
 /* ===== NEW FEATURE ADDITIONS ===== */
+
+/* Order price live preview */
+.order-price-preview {
+  background: rgba(232,0,30,0.05);
+  border: 1px solid rgba(232,0,30,0.18);
+  border-radius: 12px;
+  padding: 14px 18px;
+  margin: 16px 0 4px;
+  font-size: 14px;
+}
+.opp-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 3px 0;
+}
+.opp-label { color: var(--text-muted); font-size: 13px; }
+.opp-unit  { font-weight: 600; color: var(--text); font-size: 13px; }
+.opp-divider {
+  height: 1px;
+  background: rgba(232,0,30,0.15);
+  margin: 8px 0;
+}
+.opp-total-row { margin-top: 2px; }
+.opp-total {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 900;
+  color: var(--red-bright);
+  letter-spacing: 0.5px;
+  line-height: 1;
+}
+
+/* Product page running total */
+.pg-total-preview {
+  margin-top: 10px;
+  padding: 10px 14px;
+  background: rgba(232,0,30,0.06);
+  border: 1px solid rgba(232,0,30,0.15);
+  border-radius: 8px;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+.pg-total-preview strong {
+  color: var(--red-bright);
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  margin-left: 4px;
+}
+.pg-total-preview small { opacity: 0.6; font-size: 12px; margin-left: 6px; }
 
 /* COD Notice in order modal */
 .cod-notice {
