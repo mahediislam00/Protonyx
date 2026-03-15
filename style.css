@@ -32,7 +32,7 @@ body {
 /* ===== SCROLLBAR ===== */
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: var(--bg); }
-::-webkit-scrollbar-thumb { background: var(--red); border-radius: 2px; }
+::-webkit-scrollbar-thumb { backgrouFnd: var(--red); border-radius: 2px; }
 
 /* ===== GLASS CARD ===== */
 .glass-card {
@@ -320,7 +320,7 @@ body {
 /* Hero title */
 .hero-title {
   font-family: var(--font-display);
-  font-size: clamp(68px, 9vw, 128px);
+  font-size: clamp(55px, 9vw, 115px);
   font-weight: 900;
   line-height: 0.92;
   letter-spacing: -1px;
