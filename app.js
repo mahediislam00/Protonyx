@@ -58,15 +58,6 @@ const LOGO_URL_DEFAULT = ''; // e.g. '/logo.png'
 //  Use repo-relative paths like '/images/dragon.jpg' or full URLs.
 // ─────────────────────────────────────────
 const PRODUCTS_TEMPLATE = [
-   {
-    id: 'laptop_stand1',
-    name: 'Modular Desk Organizer',
-    desc: 'Stackable desk organizer printed in durable PETG. Fits standard pens, rulers, and accessories.',
-    price: 420,
-    category: 'functional',
-    emoji: '⚙️',
-    images: ['/image/laptopstand1a.jpg', '/image/laptopstand1b.jpg']
-  },
   {
     id: 'prod_figurines_dragon',
     name: 'Dragon Figurine',
@@ -75,7 +66,7 @@ const PRODUCTS_TEMPLATE = [
     category: 'figurines',
     emoji: '🐉',
     images: [
-         // '/image/laptopstand1b.jpg',
+      // '/images/dragon-1.jpg',
       // '/images/dragon-2.jpg',
     ]
   },
@@ -184,19 +175,42 @@ function showMainView() {
 }
 
 // =========================================
-//   PRODUCTS — STATIC JSON
+//   PRODUCTS — TWO-LAYER SYSTEM
+//
+//   Layer 1 (template): PRODUCTS_TEMPLATE in this file — always loaded fresh.
+//                       Edit here and changes appear on next page load/deploy.
+//   Layer 2 (custom):   Dev Panel additions saved to localStorage 'protonyx_custom_products'.
+//   Hidden list:         IDs of template products deleted via Dev Panel → 'protonyx_hidden_ids'.
+//
+//   products = template (minus hidden) + custom additions
 // =========================================
 function loadProducts() {
   const loadingEl = document.getElementById('productsLoading');
   if (loadingEl) loadingEl.style.display = 'flex';
-  const saved = localStorage.getItem('protonyx_products');
-  products = saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(PRODUCTS_TEMPLATE));
-  if (!saved) localStorage.setItem('protonyx_products', JSON.stringify(products));
+
+  // Always read template fresh from code — edits here show immediately on deploy
+  const templateProducts = JSON.parse(JSON.stringify(PRODUCTS_TEMPLATE));
+
+  // Custom products added via Dev Panel
+  const customProducts = JSON.parse(localStorage.getItem('protonyx_custom_products') || '[]');
+
+  // IDs of template products the dev deleted
+  const hiddenIds = JSON.parse(localStorage.getItem('protonyx_hidden_ids') || '[]');
+
+  // Merge: template (filtered) first, then custom additions on top
+  const visibleTemplate = templateProducts.filter(p => !hiddenIds.includes(p.id));
+  products = [...customProducts, ...visibleTemplate];
+
   if (loadingEl) loadingEl.style.display = 'none';
   renderProducts();
   if (devAuthenticated) renderDevProductList();
 }
-function saveProductsToStorage() { localStorage.setItem('protonyx_products', JSON.stringify(products)); }
+
+function saveProductsToStorage() {
+  // Only persist custom (dev-added) products — template always comes from code
+  const customProducts = products.filter(p => !PRODUCTS_TEMPLATE.some(t => t.id === p.id));
+  localStorage.setItem('protonyx_custom_products', JSON.stringify(customProducts));
+}
 
 // =========================================
 //   LOGO
@@ -1200,21 +1214,41 @@ function addProduct() {
   const urlsRaw  = document.getElementById('devProductUrls').value.trim();
   if (!name || !price) { showToast('Product Name & Price are required', 'error'); return; }
   // Store raw paths as entered — they are resolved via resolveImageUrl() when displayed
-  const images = urlsRaw ? urlsRaw.split('\n').map(u => u.trim()).filter(Boolean) : [];
+  const images     = urlsRaw ? urlsRaw.split('\n').map(u => u.trim()).filter(Boolean) : [];
   const newProduct = { id: 'prod_' + Date.now(), name, desc, price, category, images, emoji: getCategoryEmoji(category) };
+
+  // Add to front of the list and persist only custom products
   products.unshift(newProduct);
-  saveProductsToStorage();
+  const customProducts = JSON.parse(localStorage.getItem('protonyx_custom_products') || '[]');
+  customProducts.unshift(newProduct);
+  localStorage.setItem('protonyx_custom_products', JSON.stringify(customProducts));
+
   renderProducts();
   renderDevProductList();
   ['devProductName','devProductDesc','devProductPrice','devProductUrls'].forEach(id => { document.getElementById(id).value = ''; });
   showToast(`"${name}" added!`, 'success');
 }
+
 function deleteProduct(id) {
   if (!confirm('Delete this product?')) return;
+
+  const isTemplate = PRODUCTS_TEMPLATE.some(p => p.id === id);
+  if (isTemplate) {
+    // Hide template product by adding to hidden list
+    const hidden = JSON.parse(localStorage.getItem('protonyx_hidden_ids') || '[]');
+    if (!hidden.includes(id)) hidden.push(id);
+    localStorage.setItem('protonyx_hidden_ids', JSON.stringify(hidden));
+  } else {
+    // Remove from custom products
+    const customProducts = JSON.parse(localStorage.getItem('protonyx_custom_products') || '[]')
+      .filter(p => p.id !== id);
+    localStorage.setItem('protonyx_custom_products', JSON.stringify(customProducts));
+  }
+
   products = products.filter(p => p.id !== id);
   cart     = cart.filter(i => i.id !== id);
   wishlist = wishlist.filter(x => x !== id);
-  saveProductsToStorage(); saveCart();
+  saveCart();
   localStorage.setItem('forge3d_wishlist', JSON.stringify(wishlist));
   updateCartCount(); updateWishlistCount();
   renderProducts(); renderDevProductList();
@@ -1223,15 +1257,41 @@ function deleteProduct(id) {
 function renderDevProductList() {
   const container = document.getElementById('devProductList');
   if (!container) return;
-  if (products.length === 0) { container.innerHTML = '<p class="dev-list-placeholder">No products yet. Add one above.</p>'; return; }
+  if (products.length === 0) {
+    container.innerHTML = '<p class="dev-list-placeholder">No products yet. Add one above, or edit PRODUCTS_TEMPLATE in app.js.</p>';
+    // Still show restore button if template products are hidden
+    const hidden = JSON.parse(localStorage.getItem('protonyx_hidden_ids') || '[]');
+    if (hidden.length > 0) {
+      container.innerHTML += `<button class="dev-btn-secondary" style="width:100%;margin-top:10px" onclick="restoreTemplateProducts()">↩ RESTORE ${hidden.length} HIDDEN TEMPLATE PRODUCT${hidden.length > 1 ? 'S' : ''}</button>`;
+    }
+    return;
+  }
+  const templateIds = new Set(PRODUCTS_TEMPLATE.map(p => p.id));
   container.innerHTML = products.map(p => {
-    const img = getProductImages(p)[0];
+    const img    = getProductImages(p)[0];
+    const isTemp = templateIds.has(p.id);
     return `<div class="dev-product-item">
       <div class="dev-product-thumb">${img ? `<img src="${img}" alt="${p.name}">` : p.emoji || '🖨️'}</div>
-      <div class="dev-product-info"><strong>${p.name}</strong><span>৳${p.price.toLocaleString()} · ${p.category}</span></div>
+      <div class="dev-product-info">
+        <strong>${p.name}</strong>
+        <span>৳${p.price.toLocaleString()} · ${p.category} · <em style="font-style:normal;opacity:0.45">${isTemp ? 'template' : 'custom'}</em></span>
+      </div>
       <button class="dev-delete-btn" onclick="deleteProduct('${p.id}')">DEL</button>
     </div>`;
   }).join('');
+
+  // Show restore button if any template products are hidden
+  const hidden = JSON.parse(localStorage.getItem('protonyx_hidden_ids') || '[]');
+  if (hidden.length > 0) {
+    container.innerHTML += `<button class="dev-btn-secondary" style="width:100%;margin-top:10px" onclick="restoreTemplateProducts()">↩ RESTORE ${hidden.length} HIDDEN TEMPLATE PRODUCT${hidden.length > 1 ? 'S' : ''}</button>`;
+  }
+}
+
+function restoreTemplateProducts() {
+  localStorage.removeItem('protonyx_hidden_ids');
+  loadProducts();
+  renderDevProductList();
+  showToast('Template products restored', 'success');
 }
 function getCategoryEmoji(cat) {
   return { figurines:'🐉', functional:'⚙️', jewelry:'💍', custom:'✨', architectural:'🏛️' }[cat] || '🖨️';
