@@ -115,10 +115,10 @@ let config              = JSON.parse(localStorage.getItem('forge3d_config') || J
   whatsapp:                '',
   telegramToken:           '',
   telegramChatId:          '',
-  email:                   'mahediislam00@gmail.com',
+  email:                   'maheddislam00@gmail.com',
   emailServiceId:          'service_y89jvyv',
   emailTemplateId:         'template_5e1v1uw',
-  customerEmailTemplateId: 'template_5e1v1uw',
+  customerEmailTemplateId: 'template_8wfpync',
   emailPublicKey:          'nL_UK5aR6E_PfsgtV',
 }));
 let wishlist            = JSON.parse(localStorage.getItem('forge3d_wishlist') || '[]');
@@ -1098,26 +1098,32 @@ async function sendNotifications(orderData) {
         order_message:    msg,
       };
 
-      // 3a. Owner email
-      if (config.emailTemplateId && config.email) {
+      // 3a. Owner email — always send if template + service are configured
+      if (config.emailTemplateId) {
         try {
           await emailjs.send(config.emailServiceId, config.emailTemplateId, {
             ...sharedParams,
-            to_email: config.email,
+            to_email:  config.email || 'owner',   // {{to_email}} in template → your inbox
+            reply_to:  orderData.customer.email || '',
           });
         } catch (e) { console.warn('Owner email failed:', e); }
       }
 
-      // 3b. Customer confirmation email (if they provided email + a customer template is configured)
+      // 3b. Customer confirmation — only if:
+      //   • customer actually typed an email
+      //   • a separate customer template ID is configured
+      //   • it's a DIFFERENT template from the owner one (avoids double-send)
       const customerTemplate = config.customerEmailTemplateId;
-      if (customerTemplate && orderData.customer.email) {
+      const customerEmail    = orderData.customer.email;
+      const isDifferentTemplate = customerTemplate && customerTemplate !== config.emailTemplateId;
+
+      if (isDifferentTemplate && customerEmail) {
         try {
           await emailjs.send(config.emailServiceId, customerTemplate, {
             ...sharedParams,
-            to_email:      orderData.customer.email,
-            reply_to:      config.email || '',
-            // Friendly confirmation message the customer sees
-            confirm_msg:   `Hi ${orderData.customer.name}, your order has been received! We'll process it shortly and deliver to ${orderData.customer.address}. Payment is cash on delivery — ৳${orderData.total}.`,
+            to_email:    customerEmail,
+            reply_to:    config.email || '',
+            confirm_msg: `Hi ${orderData.customer.name}, your order has been received! We'll process it shortly and deliver to ${orderData.customer.address}. Payment is cash on delivery — ${orderData.total}.`,
           });
         } catch (e) { console.warn('Customer email failed:', e); }
       }
