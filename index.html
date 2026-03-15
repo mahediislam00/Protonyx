@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Protonyx — Premium 3D Printing Services</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;900&family=DM+Sans:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- DEV AUTH MODAL -->
+<div id="devAuthModal" class="dev-auth-overlay hidden">
+  <div class="dev-auth-box glass-card">
+    <div class="dev-auth-icon">⚙</div>
+    <h2 class="dev-auth-title">DEV MODE</h2>
+    <p class="dev-auth-sub">Enter credentials to access developer panel</p>
+    <div id="devAuthError" class="dev-auth-error hidden">Invalid username or password</div>
+    <input type="text" id="devAuthUser" placeholder="Username" class="dev-input" autocomplete="off">
+    <input type="password" id="devAuthPass" placeholder="Password" class="dev-input" autocomplete="off">
+    <button class="dev-submit" onclick="devLogin()">UNLOCK</button>
+    <button class="dev-auth-cancel" onclick="closeDevAuth()">Cancel</button>
+  </div>
+</div>
+
+<!-- DEV MODE PANEL -->
+<div id="devPanel" class="dev-panel hidden">
+  <div class="dev-header">
+    <span>⚙ DEV MODE</span>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <button onclick="devLogout()" class="dev-logout-btn">LOGOUT</button>
+      <button onclick="closeDevPanel()" style="background:none;border:none;color:var(--red-bright);font-size:18px;cursor:pointer;padding:0 4px;">✕</button>
+    </div>
+  </div>
+  <div class="dev-content">
+
+    <!-- LOGO -->
+    <h3>Brand Logo</h3>
+    <p class="dev-help-text">Enter a repo-relative path like <code>/logo.png</code> or a full URL. Saved globally — persists across sessions like product images.</p>
+    <label class="dev-config-label">Logo Path or URL</label>
+    <input type="text" id="configLogoUrl" placeholder="/logo.png  or  https://…/logo.png" class="dev-input dev-url-input">
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <button class="dev-submit" style="margin-bottom:0" onclick="saveLogoUrl()">APPLY LOGO</button>
+      <button class="dev-btn-secondary" onclick="removeLogo()">REMOVE</button>
+    </div>
+
+    <hr class="dev-hr">
+
+    <!-- GITHUB REPO BASE -->
+    <h3>GitHub Repo Base</h3>
+    <p class="dev-help-text">Set once so you can use short paths like <code>/images/photo.jpg</code> everywhere — products, hero cards, and logo. Full URLs always work too.</p>
+    <label class="dev-config-label">Raw Base URL</label>
+    <input type="text" id="configRepoBase" placeholder="https://raw.githubusercontent.com/USER/REPO/main" class="dev-input dev-url-input">
+    <button class="dev-submit" onclick="saveRepoBase()">SAVE REPO BASE</button>
+
+    <hr class="dev-hr">
+
+    <!-- HERO CARDS -->
+    <h3>Hero Cards</h3>
+    <p class="dev-help-text">Configure the two floating product cards in the hero section.</p>
+
+    <div class="dev-card-config">
+      <div class="dev-card-config-label">Card 1</div>
+      <label class="dev-config-label">Label</label>
+      <input type="text" id="heroCard1Label" placeholder="FEATURED PRINT" class="dev-input">
+      <label class="dev-config-label">Product Name</label>
+      <input type="text" id="heroCard1Name" placeholder="Dragon Figurine" class="dev-input">
+      <label class="dev-config-label">Meta (material · resolution · time)</label>
+      <input type="text" id="heroCard1Meta" placeholder="PLA · 0.2mm · 48hr" class="dev-input">
+      <label class="dev-config-label">Price</label>
+      <input type="text" id="heroCard1Price" placeholder="850" class="dev-input">
+      <label class="dev-config-label">Image Path or URL</label>
+      <input type="text" id="heroCard1Img" placeholder="/images/figurine.jpg  or  https://…" class="dev-input dev-url-input">
+    </div>
+
+    <div class="dev-card-config" style="margin-top:10px">
+      <div class="dev-card-config-label">Card 2</div>
+      <label class="dev-config-label">Label</label>
+      <input type="text" id="heroCard2Label" placeholder="TOP SELLER" class="dev-input">
+      <label class="dev-config-label">Product Name</label>
+      <input type="text" id="heroCard2Name" placeholder="Desk Organizer" class="dev-input">
+      <label class="dev-config-label">Meta (material · resolution · time)</label>
+      <input type="text" id="heroCard2Meta" placeholder="PETG · 0.15mm · 48hr" class="dev-input">
+      <label class="dev-config-label">Price</label>
+      <input type="text" id="heroCard2Price" placeholder="420" class="dev-input">
+      <label class="dev-config-label">Image Path or URL</label>
+      <input type="text" id="heroCard2Img" placeholder="/images/organizer.jpg  or  https://…" class="dev-input dev-url-input">
+    </div>
+
+    <button class="dev-submit" onclick="saveHeroCards()">SAVE HERO CARDS</button>
+
+    <hr class="dev-hr">
+
+    <!-- ADD PRODUCT -->
+    <h3>Add Product</h3>
+    <p class="dev-help-text">Add GitHub raw image URLs (one per line) after uploading images to your repo.</p>
+    <input type="text" id="devProductName" placeholder="Product Name *" class="dev-input">
+    <textarea id="devProductDesc" placeholder="Description" class="dev-input dev-textarea"></textarea>
+    <input type="number" id="devProductPrice" placeholder="Price (BDT) *" class="dev-input">
+    <select id="devProductCategory" class="dev-input">
+      <option value="figurines">Figurines</option>
+      <option value="functional">Functional Parts</option>
+      <option value="jewelry">Jewelry</option>
+      <option value="custom">Custom</option>
+      <option value="architectural">Architectural</option>
+    </select>
+    <label class="dev-config-label">Image paths or URLs — one per line</label>
+    <textarea id="devProductUrls" placeholder="/images/photo.jpg&#10;/images/photo2.jpg&#10;or full URLs" class="dev-input dev-textarea dev-url-textarea"></textarea>
+    <button class="dev-submit" id="addProductBtn" onclick="addProduct()">ADD PRODUCT</button>
+
+    <hr class="dev-hr">
+
+    <!-- MANAGE PRODUCTS -->
+    <h3>Manage Products</h3>
+    <div id="devProductList" class="dev-product-list">
+      <p class="dev-list-placeholder">Loading…</p>
+    </div>
+
+    <hr class="dev-hr">
+
+    <!-- NOTIFICATION CONFIG -->
+    <h3>Notification Config</h3>
+    <input type="text" id="configWhatsapp" placeholder="WhatsApp number (+880...)" class="dev-input">
+    <label class="dev-config-label">Telegram Bot Token</label>
+    <input type="text" id="configTelegramToken" placeholder="123456:ABCdef..." class="dev-input">
+    <label class="dev-config-label">Telegram Chat ID</label>
+    <input type="text" id="configTelegramChatId" placeholder="987654321 (get from @userinfobot)" class="dev-input">
+    <input type="email" id="configEmail" placeholder="Admin Email (EmailJS)" class="dev-input">
+    <input type="text" id="configEmailService" placeholder="EmailJS Service ID" class="dev-input">
+    <input type="text" id="configEmailTemplate" placeholder="EmailJS Template ID" class="dev-input">
+    <input type="text" id="configEmailPublic" placeholder="EmailJS Public Key" class="dev-input">
+    <button class="dev-submit" onclick="saveConfig()">SAVE CONFIG</button>
+
+    <hr class="dev-hr">
+
+    <!-- CHANGE CREDENTIALS -->
+    <h3>Change Credentials</h3>
+    <input type="text" id="newDevUser" placeholder="New Username" class="dev-input" autocomplete="off">
+    <input type="password" id="newDevPass" placeholder="New Password" class="dev-input" autocomplete="off">
+    <input type="password" id="newDevPassConfirm" placeholder="Confirm New Password" class="dev-input" autocomplete="off">
+    <button class="dev-submit" onclick="changeDevCredentials()">UPDATE CREDENTIALS</button>
+
+  </div>
+</div>
+<div id="devOverlay" class="dev-overlay hidden" onclick="closeDevPanel()"></div>
+
+<!-- NAV -->
+<nav id="navbar">
+  <div class="nav-logo" onclick="showMainView()" style="cursor:pointer">
+    <img id="navLogoImg" class="nav-logo-img hidden" src="" alt="Protonyx Logo">
+    <span id="navLogoText">PROTO<span>NYX</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="#products" onclick="showMainView()">Products</a>
+    <a href="#how" onclick="showMainView()">Process</a>
+    <a href="#about" onclick="showMainView()">About</a>
+    <a href="#contact" onclick="showMainView()">Contact</a>
+  </div>
+  <div class="nav-right">
+    <button class="wishlist-nav-btn" onclick="toggleWishlistSidebar()" title="Wishlist">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+      <span id="wishlistCount" class="wishlist-count">0</span>
+    </button>
+    <div class="cart-btn" onclick="toggleCart()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+      <span id="cartCount">0</span>
+    </div>
+    <button class="dev-toggle" onclick="toggleDevPanel()" title="Dev Mode">⚙</button>
+  </div>
+</nav>
+
+<!-- ═══ PRODUCT PAGE VIEW ═══ -->
+<div id="productPageView" class="hidden"></div>
+
+<!-- ═══ MAIN VIEW ═══ -->
+<div id="mainView">
+
+<!-- HERO -->
+<section class="hero" id="home">
+
+  <!-- MARQUEE — pinned to top of hero -->
+  <div class="hero-marquee">
+    <div class="marquee-track">
+      <div class="marquee">
+        <span>FDM PRINTING</span><span class="mq-sep">◆</span>
+        <span>PLA · PETG · ABS · TPU · ASA</span><span class="mq-sep">◆</span>
+        <span>CASH ON DELIVERY</span><span class="mq-sep">◆</span>
+        <span>SHIPS NATIONWIDE</span><span class="mq-sep">◆</span>
+        <span>48HR TURNAROUND</span><span class="mq-sep">◆</span>
+        <span>CUSTOM ORDERS</span><span class="mq-sep">◆</span>
+        <span>0.1MM RESOLUTION</span><span class="mq-sep">◆</span>
+        <span>FDM PRINTING</span><span class="mq-sep">◆</span>
+        <span>PLA · PETG · ABS · TPU · ASA</span><span class="mq-sep">◆</span>
+        <span>CASH ON DELIVERY</span><span class="mq-sep">◆</span>
+        <span>SHIPS NATIONWIDE</span><span class="mq-sep">◆</span>
+        <span>48HR TURNAROUND</span><span class="mq-sep">◆</span>
+        <span>CUSTOM ORDERS</span><span class="mq-sep">◆</span>
+        <span>0.1MM RESOLUTION</span><span class="mq-sep">◆</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- BG layers -->
+  <div class="hero-bg">
+    <div class="hero-noise"></div>
+    <div class="grid-overlay"></div>
+    <div class="hero-beam"></div>
+    <div class="glow-orb orb1"></div>
+    <div class="glow-orb orb2"></div>
+    <canvas id="heroCanvas"></canvas>
+  </div>
+
+  <!-- LEFT — text content -->
+  <div class="hero-content">
+    <div class="hero-eyebrow">
+      <span class="eyebrow-dot"></span>
+      <span>PRECISION FDM 3D MANUFACTURING</span>
+      <span class="eyebrow-line"></span>
+    </div>
+    <h1 class="hero-title">
+      <span class="ht-row">IMAGINATION</span>
+      <span class="ht-row ht-accent">MEETS PRECISION<span class="ht-cursor">_</span></span>
+    </h1>
+    <p class="hero-sub">Professional FDM 3D printing services. Upload your design or shop our curated collection of premium printed products.</p>
+    <div class="hero-actions">
+      <a href="#products" class="btn-primary">
+        SHOP NOW
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </a>
+      <a href="#custom" class="btn-glass">CUSTOM ORDER</a>
+    </div>
+    <div class="hero-stats">
+      <div class="stat"><span class="stat-n">250+</span><span class="stat-l">Orders</span></div>
+      <div class="stat-div"></div>
+      <div class="stat"><span class="stat-n">48hr</span><span class="stat-l">Turnaround</span></div>
+      <div class="stat-div"></div>
+      <div class="stat"><span class="stat-n">99.1%</span><span class="stat-l">Accuracy</span></div>
+    </div>
+  </div>
+
+  <!-- RIGHT — 3D shape + floating cards -->
+  <div class="hero-visual" id="heroGeo">
+    <div class="hv-glow"></div>
+
+    <!-- 3D Crystal Canvas -->
+    <div class="hv-3d-wrap">
+      <canvas id="geoCanvas"></canvas>
+      <div class="hv-scan-line"></div>
+    </div>
+
+    <!-- Two floating product cards -->
+    <div class="hv-cards-row">
+
+      <div class="hv-card glass-card hv-card-float-a" id="heroCard1">
+        <div class="hv-card-header">
+          <span class="hv-chip" id="hc1-label">FEATURED PRINT</span>
+          <span class="hv-status"><span class="hv-dot"></span>IN STOCK</span>
+        </div>
+        <div class="hv-card-img-wrap" id="hc1-img">
+          <span class="hv-card-img-ph">🖨️</span>
+        </div>
+        <div class="hv-card-body">
+          <div class="hv-card-name" id="hc1-name">Custom Figurine</div>
+          <div class="hv-card-meta" id="hc1-meta">PLA · 0.2mm · 48hr</div>
+          <div class="hv-card-foot">
+            <span class="hv-price" id="hc1-price">৳850</span>
+            <button class="hv-add-btn">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>ADD
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="hv-card glass-card hv-card-float-b" id="heroCard2">
+        <div class="hv-card-header">
+          <span class="hv-chip hv-chip-alt" id="hc2-label">TOP SELLER</span>
+          <span class="hv-status"><span class="hv-dot"></span>IN STOCK</span>
+        </div>
+        <div class="hv-card-img-wrap" id="hc2-img">
+          <span class="hv-card-img-ph">⚙️</span>
+        </div>
+        <div class="hv-card-body">
+          <div class="hv-card-name" id="hc2-name">Desk Organizer</div>
+          <div class="hv-card-meta" id="hc2-meta">PETG · 0.15mm · 48hr</div>
+          <div class="hv-card-foot">
+            <span class="hv-price" id="hc2-price">৳420</span>
+            <button class="hv-add-btn">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>ADD
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="hero-scroll">
+    <span>SCROLL</span>
+    <div class="scroll-line"></div>
+  </div>
+</section>
+
+<!-- PRODUCTS -->
+<section id="products" class="section">
+  <div class="section-header">
+    <div class="section-tag">OUR CATALOG</div>
+    <h2 class="section-title">PRODUCTS</h2>
+    <p class="section-sub">Browse our collection of premium FDM prints — or place a custom order.</p>
+  </div>
+  <div class="search-filter-row">
+    <div class="search-wrap">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+      <input type="text" id="productSearch" class="search-input" placeholder="Search products…" oninput="filterProducts()">
+    </div>
+    <div class="filter-bar">
+      <button class="filter-btn active" data-filter="all">All</button>
+      <button class="filter-btn" data-filter="figurines">Figurines</button>
+      <button class="filter-btn" data-filter="functional">Functional</button>
+      <button class="filter-btn" data-filter="jewelry">Jewelry</button>
+      <button class="filter-btn" data-filter="architectural">Architectural</button>
+      <button class="filter-btn" data-filter="custom">Custom</button>
+    </div>
+  </div>
+  <div id="productsLoading" class="products-loading">
+    <div class="loading-spinner"></div><p>Loading products…</p>
+  </div>
+  <div class="products-grid" id="productsGrid"></div>
+  <div class="empty-state hidden" id="emptyState">
+    <div class="empty-icon">🖨️</div>
+    <p>No products found</p>
+    <small>Check back soon or try a different filter</small>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section id="how" class="section how-section">
+  <div class="section-header">
+    <div class="section-tag">PROCESS</div>
+    <h2 class="section-title">HOW IT WORKS</h2>
+  </div>
+  <div class="steps-grid">
+    <div class="step-card glass-card"><div class="step-num">01</div><div class="step-icon">🛒</div><h3>Browse & Select</h3><p>Choose from our catalog or bring your own STL/OBJ file for a fully custom order.</p></div>
+    <div class="step-card glass-card"><div class="step-num">02</div><div class="step-icon">⚙️</div><h3>Configure Print</h3><p>Pick your FDM material (PLA, PETG, ABS, TPU, ASA), color preference, and quantity.</p></div>
+    <div class="step-card glass-card"><div class="step-num">03</div><div class="step-icon">🖨️</div><h3>We Print</h3><p>Your order enters our FDM print queue. Every piece is quality-inspected before dispatch.</p></div>
+    <div class="step-card glass-card"><div class="step-num">04</div><div class="step-icon">📦</div><h3>COD Delivery</h3><p>Delivered to your door anywhere in Bangladesh. Pay cash on delivery — no upfront cost.</p></div>
+  </div>
+</section>
+
+<!-- CUSTOM ORDER -->
+<section id="custom" class="custom-section">
+  <div class="custom-inner glass-card">
+    <div class="custom-text">
+      <div class="section-tag">CUSTOM ORDER</div>
+      <h2 class="section-title" style="text-align:left">HAVE YOUR<br>OWN DESIGN?</h2>
+      <p>Send us your STL, OBJ, or 3MF file and we'll print it exactly to spec. Prototypes, functional parts, art pieces — we handle everything.</p>
+      <ul class="custom-list">
+        <li>✦ FDM printing in PLA, PETG, ABS, TPU, ASA</li>
+        <li>✦ Multiple color options available</li>
+        <li>✦ 300×300×300mm max build volume</li>
+        <li>✦ Cash on delivery — pay on receipt</li>
+      </ul>
+      <button class="btn-primary" onclick="openOrderModal(null,true)">START CUSTOM ORDER</button>
+    </div>
+    <div class="cube-container">
+      <div class="cube">
+        <div class="face front"></div><div class="face back"></div>
+        <div class="face left"></div><div class="face right"></div>
+        <div class="face top"></div><div class="face bottom"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ABOUT -->
+<section id="about" class="about-section">
+  <div class="about-grid">
+    <div class="about-text">
+      <div class="section-tag">ABOUT US</div>
+      <h2 class="section-title" style="text-align:left">PRECISION<br>IS OUR<br>CRAFT</h2>
+      <p>Protonyx is Bangladesh's premier FDM 3D printing service, combining industrial-grade machines with an obsessive commitment to quality. From product prototypes to collectible figurines — we print it all.</p>
+      <p style="margin-top:12px;opacity:0.7">Based in Dhaka · Ships nationwide</p>
+    </div>
+    <div class="about-specs">
+      <div class="spec-card glass-card"><span class="spec-val">0.1mm</span><span class="spec-key">Layer Resolution</span></div>
+      <div class="spec-card glass-card"><span class="spec-val">300°C</span><span class="spec-key">Max Temp</span></div>
+      <div class="spec-card glass-card"><span class="spec-val">300×300</span><span class="spec-key">Build Volume (mm)</span></div>
+      <div class="spec-card glass-card"><span class="spec-val">5★</span><span class="spec-key">Avg Rating</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section id="contact" class="contact-section">
+  <div class="section-header">
+    <div class="section-tag">CONTACT</div>
+    <h2 class="section-title">GET IN TOUCH</h2>
+  </div>
+  <div class="contact-grid">
+    <div class="contact-info glass-card">
+      <div class="contact-item"><span class="contact-icon">📍</span><div><strong>Location</strong><br>Dhaka, Bangladesh</div></div>
+      <div class="contact-item"><span class="contact-icon">📱</span><div><strong>WhatsApp</strong><br><span id="displayWhatsapp">Configure in Dev Mode</span></div></div>
+      <div class="contact-item"><span class="contact-icon">✉️</span><div><strong>Email</strong><br><span id="displayEmail">Configure in Dev Mode</span></div></div>
+      <div class="contact-item"><span class="contact-icon">💵</span><div><strong>Payment</strong><br>Cash on Delivery Only</div></div>
+    </div>
+    <div class="contact-form glass-card">
+      <h3>Quick Inquiry</h3>
+      <input type="text" placeholder="Your Name" class="form-input" id="inquiryName">
+      <input type="text" placeholder="Phone / Email" class="form-input" id="inquiryContact">
+      <textarea placeholder="Your message…" class="form-input form-textarea" id="inquiryMsg"></textarea>
+      <button class="btn-primary" onclick="sendInquiry()">SEND MESSAGE</button>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="footer-top">
+    <div class="footer-logo">PROTO<span>NYX</span></div>
+    <div class="footer-links">
+      <a href="#products">Products</a>
+      <a href="#how">Process</a>
+      <a href="#custom">Custom</a>
+      <a href="#contact">Contact</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span>© 2025 Protonyx. All rights reserved.</span>
+    <span>Made with precision & passion 🔴</span>
+  </div>
+</footer>
+
+</div><!-- /#mainView -->
+
+<!-- WISHLIST SIDEBAR -->
+<div id="wishlistSidebar" class="cart-sidebar wishlist-sidebar">
+  <div class="cart-header"><h3>♡ WISHLIST</h3><button onclick="toggleWishlistSidebar()">✕</button></div>
+  <div class="cart-items" id="wishlistItems"></div>
+</div>
+<div class="cart-overlay hidden" id="wishlistOverlay" onclick="toggleWishlistSidebar()"></div>
+
+<!-- CART SIDEBAR -->
+<div id="cartSidebar" class="cart-sidebar">
+  <div class="cart-header"><h3>YOUR CART</h3><button onclick="toggleCart()">✕</button></div>
+  <div class="cart-items" id="cartItems"></div>
+  <div class="cart-footer">
+    <div class="cart-total">Total: <span id="cartTotal">৳0</span></div>
+    <button class="btn-primary w-full" onclick="proceedToOrder()">PLACE ORDER</button>
+  </div>
+</div>
+<div class="cart-overlay hidden" id="cartOverlay" onclick="toggleCart()"></div>
+
+<!-- ORDER MODAL -->
+<div id="orderModal" class="modal-overlay hidden">
+  <div class="modal glass-card">
+    <div class="modal-header">
+      <h2>ORDER DETAILS</h2>
+      <button onclick="closeOrderModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <p class="modal-sub" id="modalProductName"></p>
+      <div class="cod-notice">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        Cash on Delivery — Pay when you receive your order
+      </div>
+      <div class="form-grid">
+        <div class="form-group"><label>Full Name *</label><input type="text" id="orderName" class="form-input" placeholder="Your full name"></div>
+        <div class="form-group"><label>Phone Number *</label><input type="tel" id="orderPhone" class="form-input" placeholder="+880..."></div>
+        <div class="form-group"><label>Email Address</label><input type="email" id="orderEmail" class="form-input" placeholder="your@email.com"></div>
+        <div class="form-group"><label>Delivery Address *</label><input type="text" id="orderAddress" class="form-input" placeholder="Full delivery address"></div>
+        <div class="form-group">
+          <label>FDM Material</label>
+          <select id="orderMaterial" class="form-input">
+            <option value="PLA">PLA (Standard)</option><option value="PETG">PETG (Durable)</option>
+            <option value="ABS">ABS (Heat-resistant)</option><option value="TPU">TPU (Flexible)</option>
+            <option value="ASA">ASA (UV-resistant)</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Color Preference</label><input type="text" id="orderColor" class="form-input" placeholder="e.g. Red, Black, White"></div>
+        <div class="form-group"><label>Quantity</label><input type="number" id="orderQty" class="form-input" value="1" min="1"></div>
+        <div class="form-group"><label>Upload Design File (optional)</label><input type="file" id="orderFile" class="form-input" accept=".stl,.obj,.3mf,image/*"></div>
+      </div>
+      <div class="form-group full-width">
+        <label>Special Instructions</label>
+        <textarea id="orderNotes" class="form-input form-textarea" placeholder="Any special requirements…"></textarea>
+      </div>
+      <div id="orderSummary" class="order-summary"></div>
+      <button class="btn-primary w-full" onclick="submitOrder()" id="submitOrderBtn">SUBMIT ORDER</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast" class="toast hidden"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
