@@ -65,7 +65,7 @@ const PRODUCTS_TEMPLATE = [
     price: 420,
     category: 'functional',
     emoji: '⚙️',
-    images: [/image/laptopstand1a, /image/laptopstand1b]
+    images: ['/image/laptopstand1a.jpg', '/image/laptopstand1b.jpg']
   },
   {
     id: 'prod_figurines_dragon',
