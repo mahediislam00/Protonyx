@@ -132,7 +132,7 @@ let config              = JSON.parse(localStorage.getItem('forge3d_config') || J
   whatsapp:                '',
   telegramToken:           '',
   telegramChatId:          '',
-  email:                   'maheddislam00@gmail.com',
+  email:                   'mahediislam00@gmail.com',
   emailServiceId:          'service_y89jvyv',
   emailTemplateId:         'template_5e1v1uw',
   customerEmailTemplateId: 'template_8wfpync',
